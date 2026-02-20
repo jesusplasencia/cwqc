@@ -86,6 +86,11 @@ export default function Home() {
 
         <QueryOutput query={query} />
       </div>
+
+      <footer className="app-footer">
+        <hr className="footer-divider" />
+        <p>Directed by Jesus Plasencia Toledo &middot; 2026</p>
+      </footer>
     </div>
   );
 }

@@ -298,3 +298,23 @@ button:focus-visible {
   border-top: 1px solid var(--border);
   margin: 1.25rem 0;
 }
+
+/* ---- Footer ---- */
+
+.app-footer {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
+  margin-top: 2rem;
+}
+
+.app-footer .footer-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.app-footer p {
+  color: #B8BDD4;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
