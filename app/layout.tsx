@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "CloudWatch Query Crafter",
   description:
     "Craft CloudWatch Logs Insights queries visually and copy them instantly.",
+  icons: {
+    icon: "/images/favicon.png",
+  },
 };
 
 export default function RootLayout({
@@ -14,7 +17,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <main>
+          {children}
+        </main>
+      </body>
     </html>
   );
 }
