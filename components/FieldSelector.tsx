@@ -3,20 +3,20 @@ import type { SelectedFields } from "@/types";
 interface FieldSelectorProps {
   selectedFields: SelectedFields;
   onChange: (fields: SelectedFields) => void;
-  showBody: boolean;
+  showDetail: boolean;
 }
 
 const FIELD_LABELS: { key: keyof SelectedFields; label: string }[] = [
   { key: "timestamp", label: "@timestamp" },
   { key: "logStream", label: "@logStream" },
   { key: "message", label: "@message" },
-  { key: "body", label: "body" },
+  { key: "detail", label: "detail" },
 ];
 
 export default function FieldSelector({
   selectedFields,
   onChange,
-  showBody,
+  showDetail,
 }: FieldSelectorProps) {
   const checkedCount = Object.values(selectedFields).filter(Boolean).length;
 
@@ -24,9 +24,9 @@ export default function FieldSelector({
     onChange({ ...selectedFields, [key]: !selectedFields[key] });
   };
 
-  const fields = showBody
+  const fields = showDetail
     ? FIELD_LABELS
-    : FIELD_LABELS.filter((f) => f.key !== "body");
+    : FIELD_LABELS.filter((f) => f.key !== "detail");
 
   return (
     <div>

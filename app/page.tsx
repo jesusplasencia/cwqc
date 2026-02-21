@@ -26,7 +26,7 @@ export default function Home() {
     timestamp: true,
     logStream: true,
     message: true,
-    body: false,
+    detail: false,
   });
 
   const query = useMemo(
@@ -95,7 +95,7 @@ export default function Home() {
           <FieldSelector
             selectedFields={selectedFields}
             onChange={setSelectedFields}
-            showBody={logSource === "eventBus"}
+            showDetail={logSource === "eventBus"}
           />
         </div>
 

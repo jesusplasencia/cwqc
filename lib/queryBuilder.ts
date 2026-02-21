@@ -38,12 +38,14 @@ export function buildQuery({
   if (selectedFields.logStream) fieldsList.push("@logStream");
   if (selectedFields.message) fieldsList.push("@message");
 
-  const needsBody = selectedFields.body && logSource === "eventBus";
+  const needsDetail = selectedFields.detail && logSource === "eventBus";
 
-  const lines: string[] = [`fields ${fieldsList.join(", ")}`];
+  const lines: string[] = [];
+  if (fieldsList.length > 0) {
+    lines.push(`fields ${fieldsList.join(", ")}`);
+  }
 
   if (logSource === "eventBus") {
-    lines.push(`| filter @message like /EVENT:/`);
 
     if (eventBusFilters.source.trim()) {
       const escaped = escapeRegexLiteral(eventBusFilters.source.trim());
@@ -61,15 +63,15 @@ export function buildQuery({
     const activeBodyFilters = messageFilters.filter(
       (f) => f.key.trim() && f.value.trim()
     );
-    if (activeBodyFilters.length > 0 || needsBody) {
+    if (activeBodyFilters.length > 0 || needsDetail) {
       lines.push(
-        `| parse @message /"body"\\s*:\\s*(?<body>\\{.+)/`
+        `| parse @message /"detail"\\s*:\\s*(?<detail>\\{.+)/`
       );
       for (const f of activeBodyFilters) {
         const escapedKey = escapeRegexLiteral(f.key.trim());
         const escapedValue = escapeRegexLiteral(f.value.trim());
         const pattern = buildFilterRegex(escapedKey, escapedValue, f.operator, f.dataType);
-        lines.push(`| filter body like /${pattern}/`);
+        lines.push(`| filter detail like /${pattern}/`);
       }
     }
   } else {
@@ -84,6 +86,11 @@ export function buildQuery({
 
   lines.push("| sort @timestamp desc");
   lines.push("| limit 100");
+
+  // When no `fields` line exists, the first line starts with `| ` — strip it
+  if (lines.length > 0 && lines[0].startsWith("| ")) {
+    lines[0] = lines[0].slice(2);
+  }
 
   return lines.join("\n");
 }

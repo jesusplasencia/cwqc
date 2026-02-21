@@ -19,5 +19,5 @@ export interface SelectedFields {
   timestamp: boolean;
   logStream: boolean;
   message: boolean;
-  body: boolean;
+  detail: boolean;
 }
