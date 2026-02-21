@@ -1,4 +1,4 @@
-import type { MessageFilter, FilterOperator } from "@/types";
+import type { MessageFilter, FilterOperator, ValueDataType } from "@/types";
 
 interface MessageFiltersProps {
   filters: MessageFilter[];
@@ -26,12 +26,6 @@ export default function MessageFilters({
                 value={f.key}
                 onChange={(e) => onUpdate(f.id, "key", e.target.value)}
               />
-              <input
-                type="text"
-                placeholder="Value"
-                value={f.value}
-                onChange={(e) => onUpdate(f.id, "value", e.target.value)}
-              />
               <select
                 value={f.operator}
                 onChange={(e) =>
@@ -42,6 +36,25 @@ export default function MessageFilters({
                 <option value="exact">= exact</option>
                 <option value="contains">% contains</option>
               </select>
+              <select
+                value={f.dataType}
+                onChange={(e) =>
+                  onUpdate(f.id, "dataType", e.target.value as ValueDataType)
+                }
+                aria-label="Data type"
+              >
+                <option value="string">string</option>
+                <option value="number">number</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Value"
+                value={f.value}
+                onChange={(e) => onUpdate(f.id, "value", e.target.value)}
+                {...(f.dataType === "number"
+                  ? { inputMode: "numeric" as const, pattern: "[0-9]*" }
+                  : {})}
+              />
               <button
                 type="button"
                 className="btn-icon"

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import type { LogSource, MessageFilter, EventBusFilterValues } from "@/types";
+import type { LogSource, MessageFilter, EventBusFilterValues, SelectedFields } from "@/types";
 import { buildQuery } from "@/lib/queryBuilder";
 import SourceSelector from "@/components/SourceSelector";
 import EventBusFilters from "@/components/EventBusFilters";
 import MessageFilters from "@/components/MessageFilters";
+import FieldSelector from "@/components/FieldSelector";
 import QueryOutput from "@/components/QueryOutput";
 
 const SOURCE_LABELS: Record<LogSource, string> = {
@@ -21,16 +22,22 @@ export default function Home() {
     detailType: "",
   });
   const [messageFilters, setMessageFilters] = useState<MessageFilter[]>([]);
+  const [selectedFields, setSelectedFields] = useState<SelectedFields>({
+    timestamp: true,
+    logStream: true,
+    message: true,
+    body: false,
+  });
 
   const query = useMemo(
-    () => buildQuery({ logSource, eventBusFilters, messageFilters }),
-    [logSource, eventBusFilters, messageFilters]
+    () => buildQuery({ logSource, eventBusFilters, messageFilters, selectedFields }),
+    [logSource, eventBusFilters, messageFilters, selectedFields]
   );
 
   const addFilter = useCallback(() => {
     setMessageFilters((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), key: "", value: "", operator: "exact" },
+      { id: crypto.randomUUID(), key: "", value: "", operator: "exact", dataType: "string" },
     ]);
   }, []);
 
@@ -81,6 +88,14 @@ export default function Home() {
             onAdd={addFilter}
             onRemove={removeFilter}
             onUpdate={updateFilter}
+          />
+
+          <hr className="section-divider" />
+
+          <FieldSelector
+            selectedFields={selectedFields}
+            onChange={setSelectedFields}
+            showBody={logSource === "eventBus"}
           />
         </div>
 
