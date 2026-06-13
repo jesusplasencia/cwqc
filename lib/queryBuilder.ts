@@ -1,87 +1,87 @@
-import type { LogSource, MessageFilter, EventBusFilterValues, SelectedFields } from "@/types";
+import type {
+  MessageFilter,
+  EventBusFilterValues,
+  SelectedFields,
+  BodyFormat,
+} from "@/types";
 
 export function escapeRegexLiteral(str: string): string {
   return str.replace(/[\\^$.|?*+()[\]{}\/]/g, "\\$&");
 }
 
-function buildFilterRegex(escapedKey: string, escapedValue: string, operator: string, dataType: string): string {
+// EventBridge serializes envelope keys with inconsistent casing across producers,
+// so each envelope field is matched against every variant it can appear as.
+const ENVELOPE_SOURCE = `"[Ss]ource"`;
+const ENVELOPE_DETAIL_TYPE = `"(?:detail-type|DetailType)"`;
+const ENVELOPE_DETAIL = `"(?:detail|Detail)"`;
+
+// Body filters match the same key/value pair whether the payload is JSON or XML,
+// always as an exact match. The key is always a string; only the value's type
+// (string/number) varies, and it only affects JSON (XML carries values as text).
+function buildFilterRegex(
+  escapedKey: string,
+  escapedValue: string,
+  dataType: string,
+  bodyFormat: BodyFormat
+): string {
+  if (bodyFormat === "xml") {
+    // Tolerate namespace prefixes (ns:key) and tag attributes (<key attr="...">).
+    // The closing `/` must be escaped — CloudWatch delimits the regex with /.../.
+    return `<(?:\\w+:)?${escapedKey}(?:\\s[^>]*)?>\\s*${escapedValue}\\s*<\\/`;
+  }
+
+  // JSON
   if (dataType === "number") {
-    if (operator === "exact") {
-      return `"${escapedKey}"\\s*:\\s*${escapedValue}`;
-    }
-    // contains
-    return `"${escapedKey}"\\s*:\\s*\\d*${escapedValue}`;
+    return `"${escapedKey}"\\s*:\\s*${escapedValue}`;
   }
-  // string
-  if (operator === "exact") {
-    return `"${escapedKey}"\\s*:\\s*"${escapedValue}"`;
-  }
-  // contains
-  return `"${escapedKey}"\\s*:\\s*"0*${escapedValue}"`;
+  return `"${escapedKey}"\\s*:\\s*"${escapedValue}"`;
 }
 
 interface BuildQueryParams {
-  logSource: LogSource;
   eventBusFilters: EventBusFilterValues;
   messageFilters: MessageFilter[];
   selectedFields: SelectedFields;
+  bodyFormat: BodyFormat;
 }
 
 export function buildQuery({
-  logSource,
   eventBusFilters,
   messageFilters,
   selectedFields,
+  bodyFormat,
 }: BuildQueryParams): string {
   const fieldsList: string[] = [];
   if (selectedFields.timestamp) fieldsList.push("@timestamp");
   if (selectedFields.logStream) fieldsList.push("@logStream");
   if (selectedFields.message) fieldsList.push("@message");
 
-  const needsDetail = selectedFields.detail && logSource === "eventBus";
-
   const lines: string[] = [];
   if (fieldsList.length > 0) {
     lines.push(`fields ${fieldsList.join(", ")}`);
   }
 
-  if (logSource === "eventBus") {
+  if (eventBusFilters.source.trim()) {
+    const escaped = escapeRegexLiteral(eventBusFilters.source.trim());
+    lines.push(`| filter @message like /${ENVELOPE_SOURCE}\\s*:\\s*"${escaped}"/`);
+  }
+  if (eventBusFilters.detailType.trim()) {
+    const escaped = escapeRegexLiteral(eventBusFilters.detailType.trim());
+    lines.push(`| filter @message like /${ENVELOPE_DETAIL_TYPE}\\s*:\\s*"${escaped}"/`);
+  }
 
-    if (eventBusFilters.source.trim()) {
-      const escaped = escapeRegexLiteral(eventBusFilters.source.trim());
-      lines.push(
-        `| filter @message like /"source"\\s*:\\s*"${escaped}"/`
-      );
-    }
-    if (eventBusFilters.detailType.trim()) {
-      const escaped = escapeRegexLiteral(eventBusFilters.detailType.trim());
-      lines.push(
-        `| filter @message like /"detail-type"\\s*:\\s*"${escaped}"/`
-      );
-    }
+  // `detail` is only extracted when the user wants it as an output column.
+  if (selectedFields.detail) {
+    lines.push(`| parse @message /${ENVELOPE_DETAIL}\\s*:\\s*(?<detail>\\{.+)/`);
+  }
 
-    const activeBodyFilters = messageFilters.filter(
-      (f) => f.key.trim() && f.value.trim()
-    );
-    if (activeBodyFilters.length > 0 || needsDetail) {
-      lines.push(
-        `| parse @message /"detail"\\s*:\\s*(?<detail>\\{.+)/`
-      );
-      for (const f of activeBodyFilters) {
-        const escapedKey = escapeRegexLiteral(f.key.trim());
-        const escapedValue = escapeRegexLiteral(f.value.trim());
-        const pattern = buildFilterRegex(escapedKey, escapedValue, f.operator, f.dataType);
-        lines.push(`| filter detail like /${pattern}/`);
-      }
-    }
-  } else {
-    for (const f of messageFilters) {
-      if (!f.key.trim() || !f.value.trim()) continue;
-      const escapedKey = escapeRegexLiteral(f.key.trim());
-      const escapedValue = escapeRegexLiteral(f.value.trim());
-      const pattern = buildFilterRegex(escapedKey, escapedValue, f.operator, f.dataType);
-      lines.push(`| filter @message like /${pattern}/`);
-    }
+  // Body filters run against @message for both JSON and XML, decoupled from the
+  // detail extraction above.
+  for (const f of messageFilters) {
+    if (!f.key.trim() || !f.value.trim()) continue;
+    const escapedKey = escapeRegexLiteral(f.key.trim());
+    const escapedValue = escapeRegexLiteral(f.value.trim());
+    const pattern = buildFilterRegex(escapedKey, escapedValue, f.dataType, bodyFormat);
+    lines.push(`| filter @message like /${pattern}/`);
   }
 
   lines.push("| sort @timestamp desc");

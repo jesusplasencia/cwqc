@@ -3,7 +3,6 @@ import type { SelectedFields } from "@/types";
 interface FieldSelectorProps {
   selectedFields: SelectedFields;
   onChange: (fields: SelectedFields) => void;
-  showDetail: boolean;
 }
 
 const FIELD_LABELS: { key: keyof SelectedFields; label: string }[] = [
@@ -16,7 +15,6 @@ const FIELD_LABELS: { key: keyof SelectedFields; label: string }[] = [
 export default function FieldSelector({
   selectedFields,
   onChange,
-  showDetail,
 }: FieldSelectorProps) {
   const checkedCount = Object.values(selectedFields).filter(Boolean).length;
 
@@ -24,15 +22,11 @@ export default function FieldSelector({
     onChange({ ...selectedFields, [key]: !selectedFields[key] });
   };
 
-  const fields = showDetail
-    ? FIELD_LABELS
-    : FIELD_LABELS.filter((f) => f.key !== "detail");
-
   return (
     <div>
       <div className="panel-title">Fields</div>
       <div className="field-checkboxes">
-        {fields.map((f) => (
+        {FIELD_LABELS.map((f) => (
           <label key={f.key} className="checkbox-label">
             <input
               type="checkbox"

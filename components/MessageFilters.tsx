@@ -1,7 +1,10 @@
-import type { MessageFilter, FilterOperator, ValueDataType } from "@/types";
+import type { MessageFilter, ValueDataType, BodyFormat } from "@/types";
+import { MAX_BODY_FILTERS } from "@/types";
 
 interface MessageFiltersProps {
   filters: MessageFilter[];
+  bodyFormat: BodyFormat;
+  onBodyFormatChange: (format: BodyFormat) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
   onUpdate: (id: string, field: keyof MessageFilter, value: string) => void;
@@ -9,13 +12,32 @@ interface MessageFiltersProps {
 
 export default function MessageFilters({
   filters,
+  bodyFormat,
+  onBodyFormatChange,
   onAdd,
   onRemove,
   onUpdate,
 }: MessageFiltersProps) {
+  const atLimit = filters.length >= MAX_BODY_FILTERS;
+
   return (
     <div>
-      <div className="panel-title">Message Filters</div>
+      <div className="panel-header">
+        <div className="panel-title">Message Filters</div>
+        <div className="segmented" role="group" aria-label="Body format">
+          {(["json", "xml"] as const).map((fmt) => (
+            <button
+              key={fmt}
+              type="button"
+              className={`segmented-btn${bodyFormat === fmt ? " is-active" : ""}`}
+              aria-pressed={bodyFormat === fmt}
+              onClick={() => onBodyFormatChange(fmt)}
+            >
+              {fmt.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
       {filters.length > 0 && (
         <div className="filters-list">
           {filters.map((f) => (
@@ -26,16 +48,7 @@ export default function MessageFilters({
                 value={f.key}
                 onChange={(e) => onUpdate(f.id, "key", e.target.value)}
               />
-              <select
-                value={f.operator}
-                onChange={(e) =>
-                  onUpdate(f.id, "operator", e.target.value as FilterOperator)
-                }
-                aria-label="Operator"
-              >
-                <option value="exact">= exact</option>
-                <option value="contains">% contains</option>
-              </select>
+              <span className="op-eq" aria-hidden="true">=</span>
               <select
                 value={f.dataType}
                 onChange={(e) =>
@@ -81,7 +94,12 @@ export default function MessageFilters({
           ))}
         </div>
       )}
-      <button type="button" className="btn-primary" onClick={onAdd}>
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={onAdd}
+        disabled={atLimit}
+      >
         <svg
           width="16"
           height="16"
@@ -97,6 +115,9 @@ export default function MessageFilters({
         </svg>
         Add Filter
       </button>
+      {atLimit && (
+        <p className="filter-hint">Máximo {MAX_BODY_FILTERS} atributos combinados</p>
+      )}
     </div>
   );
 }

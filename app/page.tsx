@@ -1,27 +1,26 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import type { LogSource, MessageFilter, EventBusFilterValues, SelectedFields } from "@/types";
+import type {
+  MessageFilter,
+  EventBusFilterValues,
+  SelectedFields,
+  BodyFormat,
+} from "@/types";
+import { MAX_BODY_FILTERS } from "@/types";
 import { buildQuery } from "@/lib/queryBuilder";
-import SourceSelector from "@/components/SourceSelector";
 import EventBusFilters from "@/components/EventBusFilters";
 import MessageFilters from "@/components/MessageFilters";
 import FieldSelector from "@/components/FieldSelector";
 import QueryOutput from "@/components/QueryOutput";
 
-const SOURCE_LABELS: Record<LogSource, string> = {
-  eventBus: "Event Bus",
-  queue: "Queue",
-  apiGateway: "API Gateway",
-};
-
 export default function Home() {
-  const [logSource, setLogSource] = useState<LogSource>("eventBus");
   const [eventBusFilters, setEventBusFilters] = useState<EventBusFilterValues>({
     source: "",
     detailType: "",
   });
   const [messageFilters, setMessageFilters] = useState<MessageFilter[]>([]);
+  const [bodyFormat, setBodyFormat] = useState<BodyFormat>("json");
   const [selectedFields, setSelectedFields] = useState<SelectedFields>({
     timestamp: true,
     logStream: true,
@@ -30,15 +29,19 @@ export default function Home() {
   });
 
   const query = useMemo(
-    () => buildQuery({ logSource, eventBusFilters, messageFilters, selectedFields }),
-    [logSource, eventBusFilters, messageFilters, selectedFields]
+    () => buildQuery({ eventBusFilters, messageFilters, selectedFields, bodyFormat }),
+    [eventBusFilters, messageFilters, selectedFields, bodyFormat]
   );
 
   const addFilter = useCallback(() => {
-    setMessageFilters((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), key: "", value: "", operator: "exact", dataType: "string" },
-    ]);
+    setMessageFilters((prev) =>
+      prev.length >= MAX_BODY_FILTERS
+        ? prev
+        : [
+            ...prev,
+            { id: crypto.randomUUID(), key: "", value: "", dataType: "string" },
+          ]
+    );
   }, []);
 
   const removeFilter = useCallback((id: string) => {
@@ -66,25 +69,17 @@ export default function Home() {
 
       <div className="main-grid">
         <div className="panel">
-          <SourceSelector value={logSource} onChange={setLogSource} />
-
-          <hr className="section-divider" />
-
-          {logSource === "eventBus" ? (
-            <EventBusFilters
-              values={eventBusFilters}
-              onChange={setEventBusFilters}
-            />
-          ) : (
-            <div className="coming-soon">
-              {SOURCE_LABELS[logSource]} filters coming soon
-            </div>
-          )}
+          <EventBusFilters
+            values={eventBusFilters}
+            onChange={setEventBusFilters}
+          />
 
           <hr className="section-divider" />
 
           <MessageFilters
             filters={messageFilters}
+            bodyFormat={bodyFormat}
+            onBodyFormatChange={setBodyFormat}
             onAdd={addFilter}
             onRemove={removeFilter}
             onUpdate={updateFilter}
@@ -95,7 +90,6 @@ export default function Home() {
           <FieldSelector
             selectedFields={selectedFields}
             onChange={setSelectedFields}
-            showDetail={logSource === "eventBus"}
           />
         </div>
 

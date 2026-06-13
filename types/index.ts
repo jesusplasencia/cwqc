@@ -1,12 +1,12 @@
-export type LogSource = "eventBus" | "queue" | "apiGateway";
-export type FilterOperator = "exact" | "contains";
 export type ValueDataType = "string" | "number";
+export type BodyFormat = "json" | "xml";
+
+export const MAX_BODY_FILTERS = 2;
 
 export interface MessageFilter {
   id: string;
   key: string;
   value: string;
-  operator: FilterOperator;
   dataType: ValueDataType;
 }
 

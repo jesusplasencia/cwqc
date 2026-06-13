@@ -38,7 +38,7 @@ body {
 /* ---- App container ---- */
 
 .app-container {
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
 }
@@ -71,12 +71,6 @@ body {
   align-items: start;
 }
 
-@media (max-width: 768px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ---- Panel card ---- */
 
 .panel {
@@ -93,6 +87,44 @@ body {
   letter-spacing: 0.06em;
   color: var(--muted);
   margin-bottom: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header .panel-title {
+  margin-bottom: 0;
+}
+
+/* ---- Segmented control (JSON / XML) ---- */
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.segmented-btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: transparent;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.segmented-btn.is-active {
+  color: #fff;
+  background: var(--violet);
 }
 
 /* ---- Form controls ---- */
@@ -168,6 +200,17 @@ button:focus-visible {
   opacity: 0.85;
 }
 
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.filter-hint {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
 .btn-icon {
   display: inline-flex;
   align-items: center;
@@ -189,10 +232,20 @@ button:focus-visible {
 
 .filter-row {
   display: grid;
-  grid-template-columns: 1fr auto auto 1fr auto;
+  grid-template-columns: minmax(0, 1.6fr) auto auto minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: end;
   margin-bottom: 0.75rem;
+}
+
+.op-eq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .filter-row:last-of-type {
@@ -306,19 +359,6 @@ button:focus-visible {
   100% {
     opacity: 0;
   }
-}
-
-/* ---- Coming soon placeholder ---- */
-
-.coming-soon {
-  padding: 1.25rem;
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.9rem;
-  background: var(--panel2);
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  margin-bottom: 1rem;
 }
 
 /* ---- Section divider ---- */
